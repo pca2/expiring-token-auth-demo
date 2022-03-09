@@ -1,0 +1,4 @@
+black
+isort
+ipython!=8.1.0
+ipdb==0.13.8
