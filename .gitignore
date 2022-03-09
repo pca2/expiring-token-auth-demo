@@ -1,0 +1,18 @@
+.env
+.envrc
+db.sqlite3
+
+# python
+venv/
+media/
+scte_cms/jinja2/base.html*
+*.pyc
+
+# node
+/node_modules
+
+# vscode local config
+.vscode
+
+# nova local config
+.nova
