@@ -33,3 +33,27 @@ class RegistrationSerializer(serializers.ModelSerializer):
         )
 
         return user
+
+
+class UserLoginSerializer(serializers.Serializer):
+    """Login serializer""" ""
+
+    username = serializers.CharField(required=True)
+    password = serializers.CharField(required=True)
+
+
+class UserLoginResponse(serializers.ModelSerializer):
+    """""Response serializer""" ""
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "first_name",
+            "last_name",
+            "email",
+            "is_active",
+            "is_staff",
+        ]
+        read_only_fields = ["id", "password", "is_active", "is_staff"]

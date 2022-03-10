@@ -1,3 +1,4 @@
+from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from rest_framework import permissions, serializers, status
 from rest_framework.authtoken.models import Token
@@ -5,7 +6,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from tokenauth.serializers import RegistrationSerializer
+from tokenauth.serializers import (RegistrationSerializer, UserLoginResponse,
+                                   UserLoginSerializer)
 
 
 class RegistrationView(APIView):
@@ -64,3 +66,43 @@ class HelloView(APIView):
     def get(self, request):
         context = {"message": "Hello, World!"}
         return Response(context)
+
+
+class LoginView(APIView):
+    """Login View"""
+
+    permissions_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        login_serializer = UserLoginSerializer(data=request.data)
+        if login_serializer.is_valid():
+            user = authenticate(request, **login_serializer.data)
+        if user is not None:
+            response_class = UserLoginResponse(user)
+            token, created_token = Token.objects.get_or_create(user_id=user.id)
+        if isinstance(token, Token):
+            return Response(
+                {
+                    "user": response_class.data,
+                    "status": {
+                        "message": "User Authenticated",
+                        "code": status.HTTP_200_OK,
+                    },
+                    "token": token.key,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        else:
+            raise serializers.ValidationError(
+                {
+                    "error": {
+                        "message": "Invalid Username or Password. Please try again",
+                        "status": f"{status.HTTP_400_BAD_REQUEST} BAD REQUEST",
+                    }
+                }
+            )
+            return {
+                "error": serializer.errors,
+                "status": f"{status.HTTP_403_FORBIDDEN} FORBIDDEN",
+            }
