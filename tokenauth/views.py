@@ -1,3 +1,4 @@
+import datetime
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from rest_framework import permissions, serializers, status
@@ -6,8 +7,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from tokenauth.serializers import (RegistrationSerializer, UserLoginResponse,
-                                   UserLoginSerializer)
+from tokenauth.serializers import (
+    RegistrationSerializer,
+    UserLoginResponse,
+    UserLoginSerializer,
+)
 
 
 class RegistrationView(APIView):
@@ -79,8 +83,17 @@ class LoginView(APIView):
             user = authenticate(request, **login_serializer.data)
         if user is not None:
             response_class = UserLoginResponse(user)
-            token, created_token = Token.objects.get_or_create(user_id=user.id)
+            token, created = Token.objects.get_or_create(user_id=user.id)
+            utc_now = datetime.datetime.now(datetime.timezone.utc)
         if isinstance(token, Token):
+            # if token hasn't been just created and it was created more than 24hrs ago
+            if not created and token.created < (
+                utc_now - datetime.timedelta(minutes=24)
+            ):
+                token.delete()
+                token = Token.objects.create(user_id=user.id)
+                token.created = datetime.datetime.utcnow()
+                token.save()
             return Response(
                 {
                     "user": response_class.data,
