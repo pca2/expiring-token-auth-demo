@@ -87,9 +87,8 @@ class LoginView(APIView):
             utc_now = datetime.datetime.now(datetime.timezone.utc)
         if isinstance(token, Token):
             # if token hasn't been just created and it was created more than 24hrs ago
-            if not created and token.created < (
-                utc_now - datetime.timedelta(minutes=24)
-            ):
+            # refresh it with a new one
+            if not created and token.created < (utc_now - datetime.timedelta(hours=24)):
                 token.delete()
                 token = Token.objects.create(user_id=user.id)
                 token.created = datetime.datetime.utcnow()
